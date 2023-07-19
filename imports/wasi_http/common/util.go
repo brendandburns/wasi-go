@@ -9,6 +9,32 @@ import (
 	"github.com/tetratelabs/wazero/api"
 )
 
+type Settings struct {
+	AllowedHosts   []string
+	AllowedMethods []string
+}
+
+func (c *Settings) IsMethodAllowed(method string) bool {
+	return isMatch(method, c.AllowedMethods)
+}
+
+func (c *Settings) IsHostAllowed(host string) bool {
+	return isMatch(host, c.AllowedHosts)
+}
+
+func isMatch(str string, arr []string) bool {
+	// Empty list means allow all
+	if len(arr) == 0 {
+		return true
+	}
+	for _, s := range arr {
+		if s == str {
+			return true
+		}
+	}
+	return false
+}
+
 func Malloc(ctx context.Context, m api.Module, size uint32) (uint32, error) {
 	malloc := m.ExportedFunction("cabi_realloc")
 	result, err := malloc.Call(ctx, 0, 0, 4, uint64(size))

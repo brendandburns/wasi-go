@@ -14,6 +14,7 @@ import (
 
 	"github.com/stealthrocket/wasi-go"
 	"github.com/stealthrocket/wasi-go/imports"
+	"github.com/stealthrocket/wasi-go/imports/wasi_http/common"
 	"github.com/tetratelabs/wazero"
 	"github.com/tetratelabs/wazero/sys"
 )
@@ -128,7 +129,7 @@ func TestHttpClient(t *testing.T) {
 			defer system.Close(ctx)
 
 			w := MakeWasiHTTP()
-			w.Instantiate(ctx, runtime)
+			w.Instantiate(ctx, runtime, &common.Settings{})
 
 			instance, err := runtime.Instantiate(ctx, bytecode)
 			if err != nil {
@@ -196,7 +197,7 @@ func TestServer(t *testing.T) {
 			defer system.Close(ctx)
 
 			w := MakeWasiHTTP()
-			w.Instantiate(ctx, runtime)
+			w.Instantiate(ctx, runtime, &common.Settings{})
 
 			instance, err := runtime.Instantiate(ctx, bytecode)
 			if err != nil {
@@ -236,6 +237,97 @@ func TestServer(t *testing.T) {
 					t.Error("closing wasm module instance:", err)
 				}
 			}
+		})
+	}
+}
+
+func TestAllowed(t *testing.T) {
+	test := ("../../testdata/c/http/http.wasm")
+
+	h := handler{}
+	s := httptest.NewServer(&h)
+	defer s.Close()
+
+	tests := []struct {
+		s         common.Settings
+		expectErr bool
+		n         string
+	}{
+		{
+			s: common.Settings{
+				AllowedHosts:   []string{"github.com:443"},
+				AllowedMethods: []string{},
+			},
+			expectErr: true,
+			n:         "block host",
+		},
+		{
+			s: common.Settings{
+				AllowedHosts:   []string{},
+				AllowedMethods: []string{"DELETE"},
+			},
+			expectErr: true,
+			n:         "block method",
+		},
+		{
+			s: common.Settings{
+				AllowedHosts:   []string{"localhost:8080", "github.com:443"},
+				AllowedMethods: []string{"GET", "DELETE"},
+			},
+			expectErr: false,
+			n:         "allow host and method",
+		},
+	}
+
+	bytecode, err := os.ReadFile(test)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, testCase := range tests {
+		t.Run(testCase.n, func(t *testing.T) {
+			ctx := context.Background()
+
+			runtime := wazero.NewRuntime(ctx)
+			defer runtime.Close(ctx)
+
+			builder := imports.NewBuilder().
+				WithName("http").
+				WithArgs()
+			var system wasi.System
+			ctx, system, err = builder.Instantiate(ctx, runtime)
+			if err != nil {
+				t.Error("Failed to build WASI module: ", err)
+			}
+			defer system.Close(ctx)
+
+			w := MakeWasiHTTP()
+			w.Instantiate(ctx, runtime, &testCase.s)
+
+			instance, err := runtime.Instantiate(ctx, bytecode)
+			if err == nil {
+				if testCase.expectErr {
+					t.Error("Unexpected nil error")
+					t.FailNow()
+				}
+				return
+			}
+			switch e := err.(type) {
+			case *sys.ExitError:
+				if exitCode := e.ExitCode(); exitCode != 5 {
+					t.Error("unexpected exit code:", exitCode)
+					t.FailNow()
+				}
+			default:
+				t.Error("instantiating wasm module instance:", err)
+			}
+			if instance != nil {
+				if err := instance.Close(ctx); err != nil {
+					t.Error("closing wasm module instance:", err)
+				}
+			}
+
+			h.reset()
 		})
 	}
 }

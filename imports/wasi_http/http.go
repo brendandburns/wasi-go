@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/stealthrocket/wasi-go/imports/wasi_http/common"
 	"github.com/stealthrocket/wasi-go/imports/wasi_http/default_http"
 	"github.com/stealthrocket/wasi-go/imports/wasi_http/server"
 	"github.com/stealthrocket/wasi-go/imports/wasi_http/streams"
@@ -36,14 +37,14 @@ func MakeWasiHTTP() *WasiHTTP {
 	}
 }
 
-func (w *WasiHTTP) Instantiate(ctx context.Context, rt wazero.Runtime) error {
-	if err := types.Instantiate(ctx, rt, w.s, w.r, w.rs, w.f, w.o); err != nil {
+func (w *WasiHTTP) Instantiate(ctx context.Context, rt wazero.Runtime, s *common.Settings) error {
+	if err := types.Instantiate(ctx, rt, w.s, w.r, w.rs, w.f, w.o, s.AllowedMethods, s.AllowedHosts); err != nil {
 		return err
 	}
 	if err := streams.Instantiate(ctx, rt, w.s); err != nil {
 		return err
 	}
-	if err := default_http.Instantiate(ctx, rt, w.r, w.rs, w.f); err != nil {
+	if err := default_http.Instantiate(ctx, rt, w.r, w.rs, w.f, s); err != nil {
 		return err
 	}
 	return nil

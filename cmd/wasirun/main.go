@@ -14,6 +14,7 @@ import (
 	"github.com/stealthrocket/wasi-go"
 	"github.com/stealthrocket/wasi-go/imports"
 	"github.com/stealthrocket/wasi-go/imports/wasi_http"
+	wasi_http_common "github.com/stealthrocket/wasi-go/imports/wasi_http/common"
 	"github.com/tetratelabs/wazero"
 	"github.com/tetratelabs/wazero/sys"
 )
@@ -82,6 +83,14 @@ OPTIONS:
       If present, and --http-server-addr is not empty, serve WebAssembly
 	  on this URL prefix path. Default is '/'	
 
+   --http-allowed-methods <METHOD-LIST>
+      Optionally restrict the set of HTTP methods (e.g. GET/PUT/DELETE)
+	  which are allowed to be used. Default is all methods.
+
+   --http-allowed-hosts <HOST-LIST>
+      Optionally restrict the set of HTTP hosts which can be connected
+	  to. Default is unrestricted.
+
    -v, --version
       Print the version and exit
 
@@ -96,6 +105,8 @@ var (
 	dirs             stringList
 	listens          stringList
 	dials            stringList
+	wasiHttpMethods  stringList
+	wasiHttpHosts    stringList
 	dnsServer        string
 	socketExt        string
 	pprofAddr        string
@@ -125,6 +136,8 @@ func main() {
 	flagSet.StringVar(&wasiHttp, "http", "auto", "")
 	flagSet.StringVar(&wasiHttpAddr, "http-server-addr", "", "")
 	flagSet.StringVar(&wasiHttpPath, "http-server-path", "/", "")
+	flagSet.Var(&wasiHttpMethods, "http-allowed-methods", "")
+	flagSet.Var(&wasiHttpHosts, "http-allowed-hosts", "")
 	flagSet.BoolVar(&trace, "trace", false, "")
 	flagSet.IntVar(&tracerStringSize, "tracer-string-size", 32, "")
 	flagSet.BoolVar(&nonBlockingStdio, "non-blocking-stdio", false, "")
@@ -238,8 +251,12 @@ func run(wasmFile string, args []string) error {
 		return fmt.Errorf("invalid value for -http '%v', expected 'auto', 'v1' or 'none'", wasiHttp)
 	}
 	if importWasi {
+		s := wasi_http_common.Settings{
+			AllowedMethods: wasiHttpMethods,
+			AllowedHosts:   wasiHttpHosts,
+		}
 		wasiHTTP = wasi_http.MakeWasiHTTP()
-		if err := wasiHTTP.Instantiate(ctx, runtime); err != nil {
+		if err := wasiHTTP.Instantiate(ctx, runtime, &s); err != nil {
 			return err
 		}
 	}
