@@ -1,3 +1,5 @@
+github.com/dev-wasm/dev-wasm-go/http v0.0.0-20230719231428-61740cc08526 h1:eRIwlGLqHn8m+I05gJD5niy/9sMZxq9cbIT8VcGDpgk=
+github.com/dev-wasm/dev-wasm-go/http v0.0.0-20230719231428-61740cc08526/go.mod h1:K7HKbanDfLH3UL/hvExI1hVPetqnn9OZ4IOFcD5Pzw0=
 github.com/stealthrocket/wazergo v0.19.1 h1:BPrITETPgSFwiytwmToO0MbUC/+RGC39JScz1JmmG6c=
 github.com/stealthrocket/wazergo v0.19.1/go.mod h1:riI0hxw4ndZA5e6z7PesHg2BtTftcZaMxRcoiGGipTs=
 github.com/tetratelabs/wazero v1.2.0 h1:I/8LMf4YkCZ3r2XaL9whhA0VMyAvF6QE+O7rco0DCeQ=

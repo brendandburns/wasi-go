@@ -9,3 +9,5 @@ require (
 )
 
 require golang.org/x/exp v0.0.0-20230522175609-2e198f4a06a1
+
+require github.com/dev-wasm/dev-wasm-go/http v0.0.0-20230719231428-61740cc08526 // indirect
