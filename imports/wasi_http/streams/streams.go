@@ -10,7 +10,10 @@ import (
 	"github.com/tetratelabs/wazero"
 )
 
-const ModuleName = "wasi:io/streams@0.2.0-rc-2023-10-18"
+const (
+	ModuleName            = "streams"
+	ModuleName_2023_10_18 = "wasi:io/streams@0.2.0-rc-2023-10-18"
+)
 
 type Stream struct {
 	reader io.Reader
@@ -30,10 +33,22 @@ func MakeStreams() *Streams {
 	}
 }
 
-func Instantiate(ctx context.Context, r wazero.Runtime, s *Streams) error {
+func Instantiate_v1(ctx context.Context, r wazero.Runtime, s *Streams) error {
 	_, err := r.NewHostModuleBuilder(ModuleName).
 		NewFunctionBuilder().WithFunc(s.streamReadFn).Export("read").
 		NewFunctionBuilder().WithFunc(s.dropInputStreamFn).Export("drop-input-stream").
+<<<<<<< HEAD
+=======
+		NewFunctionBuilder().WithFunc(s.blockingWriteAndFlush).Export("write").
+		Instantiate(ctx)
+	return err
+}
+
+func Instantiate_2023_10_18(ctx context.Context, r wazero.Runtime, s *Streams) error {
+	_, err := r.NewHostModuleBuilder(ModuleName_2023_10_18).
+		NewFunctionBuilder().WithFunc(s.streamReadFn).Export("[method]input-stream.read").
+		NewFunctionBuilder().WithFunc(s.dropInputStreamFn).Export("[resource-drop]input-stream").
+>>>>>>> cdc49d0 (Implement the 2023_10_18 version of web serving.)
 		NewFunctionBuilder().WithFunc(s.blockingWriteAndFlush).Export("[method]output-stream.blocking-write-and-flush").
 		//NewFunctionBuilder().WithFunc(s.writeStreamFn).Export("write").
 		Instantiate(ctx)

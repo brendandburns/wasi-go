@@ -15,10 +15,11 @@ type WasmServer struct {
 	Requests  *types.Requests
 	Responses *types.Responses
 	OutParams *types.OutResponses
+	HandleFn  string
 }
 
 func (w WasmServer) ServeHTTP(res http.ResponseWriter, req *http.Request) {
-	fn := w.Module.ExportedFunction("exports_wasi_http_0_2_0_rc_2023_10_18_incoming_handler_handle")
+	fn := w.Module.ExportedFunction(w.HandleFn)
 	if fn == nil {
 		res.WriteHeader(500)
 		res.Write([]byte("Handler not found"))
