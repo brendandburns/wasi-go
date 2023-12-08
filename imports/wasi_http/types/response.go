@@ -75,6 +75,18 @@ func dropOutgoingResponseFn(_ context.Context, mod api.Module, handle uint32) {
 }
 
 func (r *Responses) outgoingResponseWriteFn(ctx context.Context, mod api.Module, res, ptr uint32) {
+	data := []byte{}
+
+	data = binary.LittleEndian.AppendUint32(data, 0)
+	data = binary.LittleEndian.AppendUint32(data, res)
+
+	if !mod.Memory().Write(ptr, data) {
+		panic("Failed to write data!")
+	}
+}
+
+func (r *Responses) outgoingBodyWriteFn(ctx context.Context, mod api.Module, res, ptr uint32) {
+	// For now the body is just the response. Eventually we may need an actual body struct.
 	response, found := r.GetResponse(res)
 	data := []byte{}
 	if !found {
@@ -96,6 +108,10 @@ func (r *Responses) outgoingResponseWriteFn(ctx context.Context, mod api.Module,
 	}
 }
 
+func (r *Responses) outgoingBodyFinishFn(ctx context.Context, mod api.Module, body, res, ptr uint32) {
+	// TODO: lock buffer here.
+}
+
 func (r *Responses) newOutgoingResponseFn(_ context.Context, status, headers uint32) uint32 {
 	res := &Response{&http.Response{}, headers, 0, nil}
 	res.StatusCode = int(status)
@@ -106,15 +122,14 @@ func (r *Responses) newOutgoingResponseFn(_ context.Context, status, headers uin
 	return baseResponseId
 }
 
-func (o *OutResponses) setResponseOutparamFn(_ context.Context, mod api.Module, res, err, resOut, _msg_ptr, _msg_str uint32) uint32 {
+func (o *OutResponses) setResponseOutparamFn(_ context.Context, mod api.Module, res, err, resOut, _msg_ptr, _msg_str uint32) {
 	if err == 1 {
 		// TODO: details here.
-		return 1
+		return
 	}
 	o.lock.Lock()
 	defer o.lock.Unlock()
 	o.responses[res] = resOut
-	return 0
 }
 
 func (r *Responses) incomingResponseStatusFn(_ context.Context, mod api.Module, handle uint32) int32 {

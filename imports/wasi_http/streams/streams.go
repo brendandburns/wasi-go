@@ -10,7 +10,7 @@ import (
 	"github.com/tetratelabs/wazero"
 )
 
-const ModuleName = "streams"
+const ModuleName = "wasi:io/streams@0.2.0-rc-2023-10-18"
 
 type Stream struct {
 	reader io.Reader
@@ -34,7 +34,8 @@ func Instantiate(ctx context.Context, r wazero.Runtime, s *Streams) error {
 	_, err := r.NewHostModuleBuilder(ModuleName).
 		NewFunctionBuilder().WithFunc(s.streamReadFn).Export("read").
 		NewFunctionBuilder().WithFunc(s.dropInputStreamFn).Export("drop-input-stream").
-		NewFunctionBuilder().WithFunc(s.writeStreamFn).Export("write").
+		NewFunctionBuilder().WithFunc(s.blockingWriteAndFlush).Export("[method]output-stream.blocking-write-and-flush").
+		//NewFunctionBuilder().WithFunc(s.writeStreamFn).Export("write").
 		Instantiate(ctx)
 	return err
 }
