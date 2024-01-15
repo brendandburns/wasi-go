@@ -45,6 +45,8 @@ func (w *WasiHTTP) Instantiate(ctx context.Context, rt wazero.Runtime) error {
 		return w.instantiateV1(ctx, rt)
 	case "2023_10_18":
 		return w.instantiate_2023_10_18(ctx, rt)
+	case "2023_11_10":
+		return w.instantiate_2023_11_10(ctx, rt)
 	default:
 		return fmt.Errorf("unknown version: %v", w.v)
 	}
@@ -68,6 +70,19 @@ func (w *WasiHTTP) instantiate_2023_10_18(ctx context.Context, rt wazero.Runtime
 		return err
 	}
 	if err := streams.Instantiate_2023_10_18(ctx, rt, w.s); err != nil {
+		return err
+	}
+	if err := default_http.Instantiate(ctx, rt, w.r, w.rs, w.f, w.v); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (w *WasiHTTP) instantiate_2023_11_10(ctx context.Context, rt wazero.Runtime) error {
+	if err := types.Instantiate_2023_11_10(ctx, rt, w.s, w.r, w.rs, w.f, w.o); err != nil {
+		return err
+	}
+	if err := streams.Instantiate_2023_11_10(ctx, rt, w.s); err != nil {
 		return err
 	}
 	if err := default_http.Instantiate(ctx, rt, w.r, w.rs, w.f, w.v); err != nil {
