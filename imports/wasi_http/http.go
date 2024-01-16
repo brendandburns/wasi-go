@@ -48,7 +48,7 @@ func (w *WasiHTTP) Instantiate(ctx context.Context, rt wazero.Runtime) error {
 	case "2023_11_10":
 		return w.instantiate_2023_11_10(ctx, rt)
 	default:
-		return fmt.Errorf("unknown version: %v", w.v)
+		return fmt.Errorf("unknown version: '%v'", w.v)
 	}
 }
 

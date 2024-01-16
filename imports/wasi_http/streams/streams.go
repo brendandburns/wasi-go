@@ -38,8 +38,6 @@ func Instantiate_v1(ctx context.Context, r wazero.Runtime, s *Streams) error {
 	_, err := r.NewHostModuleBuilder(ModuleName).
 		NewFunctionBuilder().WithFunc(s.streamReadFn).Export("read").
 		NewFunctionBuilder().WithFunc(s.dropInputStreamFn).Export("drop-input-stream").
-<<<<<<< HEAD
-=======
 		NewFunctionBuilder().WithFunc(s.blockingWriteAndFlush).Export("write").
 		Instantiate(ctx)
 	return err
@@ -49,7 +47,6 @@ func Instantiate_2023_10_18(ctx context.Context, r wazero.Runtime, s *Streams) e
 	_, err := r.NewHostModuleBuilder(ModuleName_2023_10_18).
 		NewFunctionBuilder().WithFunc(s.streamReadFn).Export("[method]input-stream.read").
 		NewFunctionBuilder().WithFunc(s.dropInputStreamFn).Export("[resource-drop]input-stream").
->>>>>>> cdc49d0 (Implement the 2023_10_18 version of web serving.)
 		NewFunctionBuilder().WithFunc(s.blockingWriteAndFlush).Export("[method]output-stream.blocking-write-and-flush").
 		//NewFunctionBuilder().WithFunc(s.writeStreamFn).Export("write").
 		Instantiate(ctx)
@@ -57,11 +54,21 @@ func Instantiate_2023_10_18(ctx context.Context, r wazero.Runtime, s *Streams) e
 }
 
 func Instantiate_2023_11_10(ctx context.Context, r wazero.Runtime, s *Streams) error {
-	_, err := r.NewHostModuleBuilder(ModuleName_2023_10_18).
+	_, err := r.NewHostModuleBuilder(ModuleName_2023_11_10).
 		NewFunctionBuilder().WithFunc(s.streamReadFn).Export("[method]input-stream.read").
 		NewFunctionBuilder().WithFunc(s.dropInputStreamFn).Export("[resource-drop]input-stream").
+		NewFunctionBuilder().WithFunc(s.dropOutputStreamFn).Export("[resource-drop]output-stream").
 		NewFunctionBuilder().WithFunc(s.blockingWriteAndFlush).Export("[method]output-stream.blocking-write-and-flush").
+		NewFunctionBuilder().WithFunc(s.subscribe).Export("[method]input-stream.subscribe").
 		//NewFunctionBuilder().WithFunc(s.writeStreamFn).Export("write").
+		Instantiate(ctx)
+	if err != nil {
+		return err
+	}
+	_, err = r.NewHostModuleBuilder(PollName_2023_11_10).
+		//NewFunctionBuilder().WithFunc(s.Subscribe).Export("[method]poll.subscribe").
+		NewFunctionBuilder().WithFunc(s.dropPollable).Export("[resource-drop]pollable").
+		NewFunctionBuilder().WithFunc(s.pollableBlock).Export("[method]pollable.block").
 		Instantiate(ctx)
 	return err
 }

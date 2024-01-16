@@ -77,3 +77,32 @@ func (handler *Handler) handleFn_2023_10_18(_ context.Context, mod api.Module, r
 		panic("Failed to write response!")
 	}
 }
+
+// Handle handles HTTP client calls.
+// The remaining parameters (b..h) are for the HTTP Options, currently unimplemented.
+func (handler *Handler) handleFn_2023_11_10(_ context.Context, mod api.Module, request, b, c, ptr uint32) {
+	req, ok := handler.req.GetRequest(request)
+	if !ok {
+		msg := fmt.Sprintf("Failed to get request: %v\n", request)
+		log.Printf(msg)
+		doError(mod, ptr, msg)
+		return
+	}
+	r, err := req.MakeRequest(handler.f)
+	if err != nil {
+		log.Println(err.Error())
+		doError(mod, ptr, err.Error())
+		return
+	}
+	res := handler.res.MakeResponse(r)
+	data := []byte{}
+
+	data = binary.LittleEndian.AppendUint32(data, 0) // IsOk == 0
+	data = binary.LittleEndian.AppendUint32(data, res)
+	data = binary.LittleEndian.AppendUint32(data, 0) // Used for errors
+	data = binary.LittleEndian.AppendUint32(data, 0) // Used for errors
+
+	if !mod.Memory().Write(ptr, data) {
+		panic("Failed to write response!")
+	}
+}

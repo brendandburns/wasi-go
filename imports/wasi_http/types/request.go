@@ -185,6 +185,33 @@ func (r *Requests) incomingRequestMethodFn(_ context.Context, mod api.Module, re
 	mod.Memory().Write(ptr, data)
 }
 
+func methodTagToString(method uint32) string {
+	methodStr := ""
+	switch method {
+	case 0:
+		methodStr = "GET"
+	case 1:
+		methodStr = "HEAD"
+	case 2:
+		methodStr = "POST"
+	case 3:
+		methodStr = "PUT"
+	case 4:
+		methodStr = "DELETE"
+	case 5:
+		methodStr = "CONNECT"
+	case 6:
+		methodStr = "OPTIONS"
+	case 7:
+		methodStr = "TRACE"
+	case 8:
+		methodStr = "PATCH"
+	default:
+		log.Fatalf("Unknown method: %d", method)
+	}
+	return methodStr
+}
+
 func (r *Requests) newOutgoingRequestFn(_ context.Context, mod api.Module,
 	method, method_ptr, method_len,
 	path_ptr, path_len,
@@ -193,29 +220,7 @@ func (r *Requests) newOutgoingRequestFn(_ context.Context, mod api.Module,
 	authority_ptr, authority_len, header_handle uint32) uint32 {
 
 	request, id := r.newRequest()
-
-	switch method {
-	case 0:
-		request.Method = "GET"
-	case 1:
-		request.Method = "HEAD"
-	case 2:
-		request.Method = "POST"
-	case 3:
-		request.Method = "PUT"
-	case 4:
-		request.Method = "DELETE"
-	case 5:
-		request.Method = "CONNECT"
-	case 6:
-		request.Method = "OPTIONS"
-	case 7:
-		request.Method = "TRACE"
-	case 8:
-		request.Method = "PATCH"
-	default:
-		log.Fatalf("Unknown method: %d", method)
-	}
+	request.Method = methodTagToString(method)
 
 	path, ok := mod.Memory().Read(uint32(path_ptr), uint32(path_len))
 	if !ok {
@@ -316,6 +321,11 @@ func (r *Requests) newOutgoingRequestFn_2023_10_18(_ context.Context, mod api.Mo
 	return id
 }
 
+func (r *Requests) newOutgoingRequestFn_2023_11_10(_ context.Context, mod api.Module, header_handle uint32) uint32 {
+	_, id := r.newRequest()
+	return id
+}
+
 func (r *Requests) dropOutgoingRequestFn(_ context.Context, mod api.Module, handle uint32) {
 	r.deleteRequest(handle)
 }
@@ -328,6 +338,69 @@ func (r *Requests) dropIncomingRequestFn(_ context.Context, mod api.Module, hand
 	r.fields.DeleteFields(req.Headers)
 	// Delete body stream here
 	r.deleteRequest(handle)
+}
+
+func (r *Requests) outgoingRequestBody(_ context.Context, mod api.Module, handle, ptr uint32) {
+	request, found := r.GetRequest(handle)
+	if !found {
+		fmt.Printf("Failed to find request: %d\n", handle)
+		return
+	}
+	request.BodyBuffer = &bytes.Buffer{}
+	data := []byte{}
+	data = binary.LittleEndian.AppendUint32(data, 0)
+	data = binary.LittleEndian.AppendUint32(data, handle)
+	mod.Memory().Write(ptr, data)
+}
+
+func (r *Requests) outgoingRequestSetMethod(_ context.Context, mod api.Module, handle, tag, ptr, len uint32) uint32 {
+	request, found := r.GetRequest(handle)
+	if !found {
+		fmt.Printf("Failed to find request: %d\n", handle)
+		return 1
+	}
+	request.Method = methodTagToString(tag)
+	return 0
+}
+
+func (r *Requests) outgoingRequestSetScheme(_ context.Context, mod api.Module, handle, a, tag, ptr, len uint32) uint32 {
+	request, found := r.GetRequest(handle)
+	if !found {
+		fmt.Printf("Failed to find request: %d\n", handle)
+		return 1
+	}
+	// TODO: Set method here.
+	request.Scheme = "https"
+	return 0
+}
+
+func (r *Requests) outgoingRequestSetPathWithQuery(_ context.Context, mod api.Module, handle, is_some, ptr, len uint32) uint32 {
+	request, found := r.GetRequest(handle)
+	if !found {
+		fmt.Printf("Failed to find request: %d\n", handle)
+		return 1
+	}
+	data, ok := mod.Memory().Read(ptr, len)
+	if !ok {
+		fmt.Printf("Failed to read string")
+	}
+	// TODO split path and query here.
+	request.Path = string(data)
+	return 0
+}
+
+func (r *Requests) outgoingRequestSetAuthority(_ context.Context, mod api.Module, handle, is_some, ptr, len uint32) uint32 {
+	request, found := r.GetRequest(handle)
+	if !found {
+		fmt.Printf("Failed to find request: %d\n", handle)
+		return 1
+	}
+	data, ok := mod.Memory().Read(ptr, len)
+	if !ok {
+		fmt.Printf("Failed to read string")
+	}
+	request.Authority = string(data)
+	return 0
 }
 
 func (r *Requests) outgoingRequestWriteFn(_ context.Context, mod api.Module, handle, ptr uint32) {

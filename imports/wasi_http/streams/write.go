@@ -27,3 +27,7 @@ func (s *Streams) blockingWriteAndFlush(_ context.Context, mod api.Module, strea
 	data = le.AppendUint32(data, uint32(n))
 	mod.Memory().Write(result_ptr, data)
 }
+
+func (s *Streams) dropOutputStreamFn(_ context.Context, mod api.Module, stream uint32) {
+	s.DeleteStream(stream)
+}

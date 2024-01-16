@@ -232,11 +232,12 @@ func run(wasmFile string, args []string) error {
 		importWasi, wasiHttp = wasi_http.DetectWasiHttp(wasmModule)
 	case "v1":
 	case "2023_10_18":
+	case "2023_11_10":
 		importWasi = true
 	case "none":
 		importWasi = false
 	default:
-		return fmt.Errorf("invalid value for -http '%v', expected 'auto', 'v1', '2023_10_18' or 'none'", wasiHttp)
+		return fmt.Errorf("invalid value for -http '%v', expected 'auto', 'v1', '2023_10_18', '2023_11_10' or 'none'", wasiHttp)
 	}
 	if importWasi {
 		wasiHTTP = wasi_http.MakeWasiHTTP(wasiHttp)

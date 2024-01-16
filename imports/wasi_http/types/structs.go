@@ -48,6 +48,12 @@ func (f *FieldsCollection) dropFieldsFn(_ context.Context, handle uint32) {
 	f.DeleteFields(handle)
 }
 
+func (f *FieldsCollection) fieldsFromList(_ context.Context, mod api.Module, this, ptr, len uint32) {
+	// TODO
+	fields := make(Fields)
+	f.MakeFields(fields)
+}
+
 func (f *FieldsCollection) newFieldsFn(_ context.Context, mod api.Module, ptr, len uint32) uint32 {
 	data, ok := mod.Memory().Read(ptr, len*16)
 	if !ok {

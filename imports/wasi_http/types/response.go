@@ -119,31 +119,29 @@ func (r *Responses) outgoingResponseWriteFn_2023_10_18(ctx context.Context, mod 
 	}
 }
 
-func (r *Responses) outgoingBodyWriteFn(ctx context.Context, mod api.Module, res, ptr uint32) {
-	// For now the body is just the response. Eventually we may need an actual body struct.
-	response, found := r.GetResponse(res)
-	data := []byte{}
-	if !found {
-		// Error
-		data = binary.LittleEndian.AppendUint32(data, 1)
-		data = binary.LittleEndian.AppendUint32(data, 0)
-	} else {
-		writer := &bytes.Buffer{}
-		stream := r.streams.NewOutputStream(writer)
-
-		response.streamHandle = stream
-		response.Buffer = writer
-		// 0 == no error
-		data = binary.LittleEndian.AppendUint32(data, 0)
-		data = binary.LittleEndian.AppendUint32(data, stream)
-	}
-	if !mod.Memory().Write(ptr, data) {
-		panic("Failed to write data!")
-	}
+func (r *Responses) outgoingBodyFinishFn(ctx context.Context, mod api.Module, body, res, ptr, a uint32) {
+	// TODO: lock buffer here.
 }
 
-func (r *Responses) outgoingBodyFinishFn(ctx context.Context, mod api.Module, body, res, ptr uint32) {
-	// TODO: lock buffer here.
+func (r *Responses) newOutgoingResponseFn_2023_11_10(_ context.Context, headers uint32) uint32 {
+	res := &Response{&http.Response{}, headers, 0, nil}
+	// res.StatusCode = int(status)
+	baseResponseId := atomic.AddUint32(&r.baseResponseId, 1)
+	r.lock.Lock()
+	defer r.lock.Unlock()
+	r.responses[baseResponseId] = res
+	return baseResponseId
+}
+
+func (r *Responses) outgoingResponseSetStatus_2023_11_10(_ context.Context, handle, status uint32) uint32 {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+	res, found := r.responses[handle]
+	if !found {
+		return 0
+	}
+	res.StatusCode = int(status)
+	return 1
 }
 
 func (r *Responses) newOutgoingResponseFn(_ context.Context, status, headers uint32) uint32 {
@@ -176,6 +174,16 @@ func (o *OutResponses) setResponseOutparamFn_2023_10_18(_ context.Context, mod a
 	o.responses[res] = resOut
 }
 
+func (o *OutResponses) setResponseOutparamFn_2023_11_10(_ context.Context, mod api.Module, res, err, resOut, a uint32, b uint64, c, d, _msg_ptr, _msg_str uint32) {
+	if err == 1 {
+		// TODO: details here.
+		return
+	}
+	o.lock.Lock()
+	defer o.lock.Unlock()
+	o.responses[res] = resOut
+}
+
 func (r *Responses) incomingResponseStatusFn(_ context.Context, mod api.Module, handle uint32) int32 {
 	response, found := r.GetResponse(handle)
 	if !found {
@@ -183,6 +191,11 @@ func (r *Responses) incomingResponseStatusFn(_ context.Context, mod api.Module, 
 		return 0
 	}
 	return int32(response.StatusCode)
+}
+
+func (r *Responses) incomingResponseSubscribe(handle uint32) uint32 {
+	// TODO
+	return 0
 }
 
 func MakeResponses(s *streams.Streams, f *FieldsCollection) *Responses {
@@ -250,4 +263,8 @@ func futureResponseGetFn_2023_10_18(_ context.Context, mod api.Module, handle, p
 	// Copy the future into the actual
 	data = le.AppendUint32(data, handle)
 	mod.Memory().Write(ptr, data)
+}
+
+func dropFutureIncomingResponse(future uint32) {
+	// TODO
 }
