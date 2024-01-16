@@ -187,7 +187,7 @@ func (o *OutResponses) setResponseOutparamFn_2023_11_10(_ context.Context, mod a
 func (r *Responses) incomingResponseStatusFn(_ context.Context, mod api.Module, handle uint32) int32 {
 	response, found := r.GetResponse(handle)
 	if !found {
-		log.Printf("Unknown response handle: %v", handle)
+		log.Printf("Unknown incoming response handle: %v", handle)
 		return 0
 	}
 	return int32(response.StatusCode)
@@ -262,6 +262,30 @@ func futureResponseGetFn_2023_10_18(_ context.Context, mod api.Module, handle, p
 	data = le.AppendUint32(data, 0)
 	// Copy the future into the actual
 	data = le.AppendUint32(data, handle)
+	mod.Memory().Write(ptr, data)
+}
+
+func futureResponseGetFn_2023_11_10(_ context.Context, mod api.Module, handle, ptr uint32) {
+	le := binary.LittleEndian
+	data := []byte{}
+	// 1 == is_some, 0 == none
+	data = le.AppendUint32(data, 1) // 0
+	// padding for some other value
+	data = le.AppendUint32(data, 0) // 4
+	// 0 == ok, 1 == is_err, consistency ftw!
+	data = le.AppendUint32(data, 0) // 8
+	// padding for some other value
+	data = le.AppendUint32(data, 0) // 12
+	// There are two Results here, for some reason
+	// 0 == ok, 1 == is_err, consistency ftw!
+	data = le.AppendUint32(data, 0) // 16
+	// padding for some other value
+	data = le.AppendUint32(data, 0) // 20
+	// Copy the future into the actual
+	data = le.AppendUint32(data, handle) // 24
+
+	// There are other data bits here if I really cared.
+
 	mod.Memory().Write(ptr, data)
 }
 

@@ -363,14 +363,25 @@ func (r *Requests) outgoingRequestSetMethod(_ context.Context, mod api.Module, h
 	return 0
 }
 
-func (r *Requests) outgoingRequestSetScheme(_ context.Context, mod api.Module, handle, a, tag, ptr, len uint32) uint32 {
+func (r *Requests) outgoingRequestSetScheme(_ context.Context, mod api.Module, handle, is_some, tag, ptr, len uint32) uint32 {
 	request, found := r.GetRequest(handle)
 	if !found {
 		fmt.Printf("Failed to find request: %d\n", handle)
 		return 1
 	}
-	// TODO: Set method here.
-	request.Scheme = "https"
+	if is_some == 0 {
+		request.Scheme = "http"
+		return 0
+	}
+	switch tag {
+	case 0:
+		request.Scheme = "http"
+	case 1:
+		request.Scheme = "https"
+	case 2:
+		fmt.Printf("Unsupported scheme")
+		return 1
+	}
 	return 0
 }
 

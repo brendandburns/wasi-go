@@ -18,6 +18,20 @@ func (s *Streams) streamReadFn(ctx context.Context, mod api.Module, stream_handl
 		log.Fatalf(err.Error())
 	}
 
+	// fmt.Printf("%d %v %s", n, done, string(rawData))
+
+	if n == 0 && done {
+		data := []byte{}
+		// 0 == is_ok, 1 == is_err
+		le := binary.LittleEndian
+		// done is an errorr
+		data = le.AppendUint32(data, 1)
+		// error tag 1 indicates stream done.
+		data = le.AppendUint32(data, 1)
+		mod.Memory().Write(out_ptr, data)
+		return
+	}
+
 	data := rawData[0:n]
 	ptr_len := uint32(len(data))
 	ptr, err := common.Malloc(ctx, mod, ptr_len)

@@ -96,7 +96,7 @@ func Instantiate_2023_11_10(ctx context.Context, rt wazero.Runtime, s *streams.S
 		NewFunctionBuilder().WithFunc(rs.incomingResponseConsumeFn).Export("[method]incoming-response.consume").
 		NewFunctionBuilder().WithFunc(rs.incomingResponseConsumeFn).Export("[method]incoming-body.stream").
 		NewFunctionBuilder().WithFunc(rs.incomingResponseSubscribe).Export("[method]future-incoming-response.subscribe").
-		NewFunctionBuilder().WithFunc(futureResponseGetFn_2023_10_18).Export("[method]future-incoming-response.get").
+		NewFunctionBuilder().WithFunc(futureResponseGetFn_2023_11_10).Export("[method]future-incoming-response.get").
 		NewFunctionBuilder().WithFunc(r.incomingRequestMethodFn).Export("[method]incoming-request.method").
 		NewFunctionBuilder().WithFunc(r.incomingRequestPathFn_2023_10_18).Export("[method]incoming-request.path-with-query").
 		NewFunctionBuilder().WithFunc(r.incomingRequestAuthorityFn_2023_10_18).Export("[method]incoming-request.authority").

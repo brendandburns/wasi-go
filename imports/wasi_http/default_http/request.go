@@ -98,6 +98,7 @@ func (handler *Handler) handleFn_2023_11_10(_ context.Context, mod api.Module, r
 	data := []byte{}
 
 	data = binary.LittleEndian.AppendUint32(data, 0) // IsOk == 0
+	data = binary.LittleEndian.AppendUint32(data, 0) // padding for some reason
 	data = binary.LittleEndian.AppendUint32(data, res)
 	data = binary.LittleEndian.AppendUint32(data, 0) // Used for errors
 	data = binary.LittleEndian.AppendUint32(data, 0) // Used for errors
