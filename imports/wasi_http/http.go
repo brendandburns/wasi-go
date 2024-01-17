@@ -3,6 +3,7 @@ package wasi_http
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/stealthrocket/wasi-go/imports/wasi_http/default_http"
@@ -123,6 +124,10 @@ func (w *WasiHTTP) MakeHandler(ctx context.Context, m api.Module) http.Handler {
 		fnName = "HTTP#handle"
 	case "2023_10_18":
 		fnName = "exports_wasi_http_0_2_0_rc_2023_10_18_incoming_handler_handle"
+	case "2023_11_10":
+		fnName = "wasi:http/incoming-handler@0.2.0-rc-2023-11-10#handle"
+	default:
+		log.Fatalf("Unknown version: %v", w.v)
 	}
 	return server.WasmServer{
 		Ctx:       ctx,
